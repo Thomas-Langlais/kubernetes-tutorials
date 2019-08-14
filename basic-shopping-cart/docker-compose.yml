@@ -1,0 +1,60 @@
+version: '3'
+services:
+  redis:
+    image: redis
+    container_name: session-store
+    networks:
+      - api
+      - auth
+  auth:
+    build: auth/
+    container_name: private-auth-service
+    networks:
+      - auth
+    depends_on:
+      - auth-db
+      - redis
+  auth-public:
+    build: auth-public/
+    container_name: public-auth-service
+    ports:
+      - 8001:80
+    networks:
+      - webnet
+      - auth
+    depends_on:
+      - auth
+  api:
+    build: api/
+    container_name: api-service
+    ports: 
+      - 8000:80
+    networks:
+      - webnet
+      - api
+    depends_on:
+      - auth
+      - api-db
+      - redis
+  api-db:
+    build: api/db
+    container_name: api-pgdb
+    restart: always
+    networks:
+      - api
+  auth-db:
+    build: auth/db
+    container_name: auth-pgdb
+    restart: always
+    networks:
+      - auth
+  # frontend:
+networks:
+  webnet:
+    driver: bridge
+  auth:
+    driver: bridge
+  api:
+    driver: bridge
+  private:
+    driver: bridge
