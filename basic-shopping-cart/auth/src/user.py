@@ -25,10 +25,10 @@ def create_user():
 
     cur = connection.cursor()
     cur.execute('INSERT INTO user(username, email, password) VALUES(%s,%s,%s)', (username, email, password))
+    
+    columns = ['id', 'username', 'email']
+    cur.execute('SELECT %s FROM user WHERE username=%s AND email=%s', (','.join(columns), username, email))
 
-    return jsonify({
-        'username': username,
-        'email': email
-    })
+    return jsonify({ key: val for key, val in zip(columns, user)})
 
 atexit.register(lambda: connection.close())

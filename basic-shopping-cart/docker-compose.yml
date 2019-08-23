@@ -17,6 +17,7 @@ services:
   auth-public:
     build: auth-public/
     container_name: public-auth-service
+    command: 'python -c "while True: continue"'
     ports:
       - 8001:80
     networks:

@@ -62,7 +62,8 @@ def create():
     if not (username != None and email != None and password != None):
         return ({'message': 'need username, email, and a password'}, 400, {'Content-Type': 'application/json'})
 
-    r = requests.post('auth/api/authentication/user', params={'username': username, 'email': email, 'password': password})
+    r = requests.post('auth/api/auth/user', params={'username': username, 'email': email, 'password': password})
+    session['user'] = r.json()
     return r.status_code
 
 atexit.register(lambda: connection.close())
