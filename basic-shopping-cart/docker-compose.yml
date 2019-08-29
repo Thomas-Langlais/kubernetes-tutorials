@@ -1,13 +1,9 @@
 version: '3'
 services:
-  redis:
-    image: redis
-    container_name: session-store
-    networks:
-      - api
-      - auth
   auth:
-    build: auth/
+    build:
+      context: ./
+      dockerfile: auth/Dockerfile
     container_name: private-auth-service
     networks:
       - auth
@@ -15,9 +11,10 @@ services:
       - auth-db
       - redis
   auth-public:
-    build: auth-public/
+    build:
+      context: ./
+      dockerfile: auth-public/Dockerfile
     container_name: public-auth-service
-    command: 'python -c "while True: continue"'
     ports:
       - 8001:80
     networks:
@@ -26,7 +23,9 @@ services:
     depends_on:
       - auth
   api:
-    build: api/
+    build:
+      context: ./
+      dockerfile: api/Dockerfile
     container_name: api-service
     ports: 
       - 8000:80
@@ -37,6 +36,14 @@ services:
       - auth
       - api-db
       - redis
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - auth
+      - api
   api-db:
     build: api/db
     container_name: api-pgdb
@@ -48,6 +55,12 @@ services:
     container_name: auth-pgdb
     restart: always
     networks:
+      - auth
+  redis:
+    image: redis
+    container_name: session-store
+    networks:
+      - api
       - auth
   # frontend:
 networks:

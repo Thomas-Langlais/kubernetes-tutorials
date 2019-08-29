@@ -1,5 +1,5 @@
-Flask
-Flask-Session
+python-dotenv
+Falcon
 redis
 requests
 psycopg2

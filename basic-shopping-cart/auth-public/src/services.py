@@ -1,9 +1,11 @@
 from flask import Blueprint, request, make_response, session, jsonify
-import psycopg2, atexit, requests
+import requests, logging
 
 service = Blueprint('service', 'service')
-connection = psycopg2.connect(host='auth-db', dbname='authentication', user='postgres')
-    
+AUTH = lambda s: 'http://auth' + s
+
+logger = logging.getLogger('auth-pub')
+
 @service.route('/login')
 def login():
     # check if it exists in the cache
@@ -31,16 +33,17 @@ def login():
         }, 400)
         resp.headers['Content-Type'] = 'application/json'
         return resp
-
-    columns = ['id', 'username', 'email', 'password']
-    cur = connection.cursor()
-    cur.execute('SELECT {columns} FROM user WHERE {type}={value}'.format(columns=','.join(columns), **login))
-    user = { key: val for key, val in zip(columns, cur.fetchone())}
-    session['user'] = user
-    cur.close()
-
-    if user == None: return ('', 404)
+    
+    resp = requests.get(AUTH('/api/auth/user'), {login['type']: login['value']})
+    users = resp.json()
+    
+    if len(users) > 1:
+        return (jsonify({'message': 'there should only be 1 user with that thing'}), 400)
+    
+    user = users[0]
     if user['password'] != password: return ('', 401)
+    
+    session['user'] = user
     
     return jsonify(user)
 
@@ -53,7 +56,7 @@ def logout():
     # doesn't exist, it's ok but return a 201
     return (dict(), 201, {'Content-Type': 'application/json'})
 
-@service.route('/create')
+@service.route('/create', methods=['POST'])
 def create():
     username = request.args.get('username', None)
     email = request.args.get('email', None)
@@ -62,8 +65,8 @@ def create():
     if not (username != None and email != None and password != None):
         return ({'message': 'need username, email, and a password'}, 400, {'Content-Type': 'application/json'})
 
-    r = requests.post('auth/api/auth/user', params={'username': username, 'email': email, 'password': password})
+    r = requests.post(AUTH('/api/auth/user'), params={'username': username, 'email': email, 'password': password})
+    logger.info(r)
+    
     session['user'] = r.json()
-    return r.status_code
-
-atexit.register(lambda: connection.close())
+    return ('', r.status_code)

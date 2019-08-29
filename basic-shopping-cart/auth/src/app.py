@@ -1,30 +1,18 @@
-from myflask import MyFlask as ApiFlask
-import user, logging, traceback
-from flask import request
-from time import strftime
+import logging, traceback, falcon, dotenv
 from logging.handlers import RotatingFileHandler
 
-app = ApiFlask(__name__, static_folder=None)
+# needs to be done before loading custom components
+dotenv.load_dotenv(dotenv.find_dotenv())
 
-app.register_blueprint(user.user, url_prefix='/api/auth/user')
+import resources.user as user, util.logging as mylogging, util.api as api
 
-@app.after_request
-def after_request(response):
-    timestamp = strftime('[%Y-%b-%d %H:%M]')
-    logger.info('%s %s %s %s %s %s', timestamp, request.remote_addr, request.method, request.scheme, request.full_path, response.status)
-    return response
+app = falcon.API(middleware=[
+    mylogging.LoggingMiddleware('auth.log', 'auth', logging.INFO)
+])
 
-@app.errorhandler(Exception)
-def exceptions(e):
-    tb = traceback.format_exc()
-    timestamp = strftime('[%Y-%b-%d %H:%M]')
-    logger.error('%s %s %s %s %s 5xx INTERNAL SERVER ERROR\n%s', timestamp, request.remote_addr, request.method, request.scheme, request.full_path, tb)
-    return e.status_code
+db_logger = logging.getLogger('auth.db')
+db_logger.setLevel(logging.DEBUG)
+db_logger.addHandler(RotatingFileHandler('auth.db.log', maxBytes=10000000, backupCount=3))
 
-if __name__ == "__main__":
-    handler = RotatingFileHandler('auth.log', maxBytes=10000000, backupCount=3)
-    logger = logging.getLogger('auth')
-    logger.setLevel(logging.ERROR)
-    logger.addHandler(handler)
-    logger.info('Spinning up server')
-    app.run(host='0.0.0.0', port='80')
+app.add_route('/', api.BaseApi())
+app.add_route('/api/auth/user/{userid}', user.User())
