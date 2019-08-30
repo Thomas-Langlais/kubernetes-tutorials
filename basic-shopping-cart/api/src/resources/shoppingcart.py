@@ -1,10 +1,10 @@
 import psycopg2, requests, falcon, json
-import auth, redis_middleware
+import shared
 
 CONN_OPTIONS = {'host':'api-db', 'dbname':'shopping-cart', 'user':'postgres'}
 
-@falcon.before(auth.get_jwt)
-@falcon.before(redis_middleware.get_session)
+@falcon.before(shared.auth.get_jwt)
+@falcon.before(shared.redis.get_session)
 class ShoppingCart(object):
     def on_get(self, req, resp, jwt, session):
         user = session.get('user', None)

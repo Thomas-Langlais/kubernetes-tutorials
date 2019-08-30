@@ -5,6 +5,7 @@ services:
       context: ./
       dockerfile: auth/Dockerfile
     container_name: private-auth-service
+    command: 'python -c "while True: continue"'
     networks:
       - auth
     depends_on:
@@ -15,6 +16,7 @@ services:
       context: ./
       dockerfile: auth-public/Dockerfile
     container_name: public-auth-service
+    command: 'python -c "while True: continue"'
     ports:
       - 8001:80
     networks:
@@ -27,6 +29,7 @@ services:
       context: ./
       dockerfile: api/Dockerfile
     container_name: api-service
+    command: 'python -c "while True: continue"'
     ports: 
       - 8000:80
     networks:
